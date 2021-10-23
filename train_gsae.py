@@ -28,11 +28,11 @@ if __name__ == '__main__':
     parser.add_argument('--dataset', default='deshaw', type=str)
 
     parser.add_argument('--input_dim', default=None, type=int)
-    parser.add_argument('--bottle_dim', default=50, type=int)
+    parser.add_argument('--bottle_dim', default=25, type=int)
     parser.add_argument('--hidden_dim', default=400, type=int)
-    parser.add_argument('--learning_rate', default=0.000025, type=float)
+    parser.add_argument('--learning_rate', default=0.00025, type=float)
 
-    parser.add_argument('--alpha', default=0.01, type=float)
+    parser.add_argument('--alpha', default=0.5, type=float)
     parser.add_argument('--beta', default=0.0005, type=float)
     parser.add_argument('--n_epochs', default=40, type=int)
     parser.add_argument('--len_epoch', default=None)
@@ -46,25 +46,11 @@ if __name__ == '__main__':
     # parse params 
     args = parser.parse_args()
 
-    # get data
-    #_, train_tup, test_tup = dataset_dict[args.dataset]()
-
-    # train dataset
-    #train_dataset = torch.utils.data.TensorDataset(*train_tup)
-    #train_dataset = ZINCDataset(transform = transforms.Compose([SmileToAdj(), AdjToScat()]))
-    #train_dataset = ZINCTranch("../data/dict_tranches/HBCD.npy", transform=Scattering())
 
     full_dataset = DEShaw('graphs/total_graphs.pkl', transform=Scattering())
     train_size = int(0.8 * len(full_dataset))
     val_size = len(full_dataset) - train_size
     train_set, val_set = torch.utils.data.random_split(full_dataset, [train_size, val_size])
-    #test_dataset = torch.utils.data.TensorDataset(*test_tup)
-
-    # get valid set
-    # train_full_size = len(train_dataset)
-    # train_split_size = int(train_full_size * .80)
-    # valid_split_size = train_full_size - train_split_size 
-    # train_set, val_set = torch.utils.data.random_split(train_dataset, [train_split_size, valid_split_size])
 
     # train loader
     train_loader = torch.utils.data.DataLoader(train_set, batch_size=args.batch_size,
@@ -80,13 +66,6 @@ if __name__ == '__main__':
 
     if not os.path.exists(save_dir):
         os.makedirs(save_dir)
-
-    # wandb_logger = WandbLogger(name='run_{}_{}_{}'.format(args.dataset, args.alpha, args.bottle_dim),
-    #                             project='rna_project_GSAE', 
-    #                             log_model=True,
-    #                             save_dir=save_dir)
-                                
-    # wandb_logger.log_hyperparams(args.__dict__)
 
 
     # early stopping 
@@ -123,20 +102,11 @@ if __name__ == '__main__':
 
     with torch.no_grad():
         loss = model.get_loss_list()
-    ##    train_embed = model.embed(train_tup[0])[0]
-    #    test_embed =  model.embed(test_tup[0])[0]
-    #    all_coeffs = torch.Tensor(np.load('HBCD_scat_coeffs_2021-06-14-06_rawcoeffs.npy'))
-    #    ordered_embed = model.embed(all_coeffs)[0]
 
     #print('saving reconstruction loss')
     loss = np.array(loss)
     np.save(save_dir + "reg_loss_list.npy", loss)
 
-    # save data
-    #print('saving embeddings')
-    #np.save(save_dir + "train_embedding.npy" , train_embed.cpu().detach().numpy() )
-    #np.save(save_dir + "test_embedding.npy" , test_embed.cpu().detach().numpy() )
-    #np.save(save_dir + "ordered_embedding.npy" , ordered_embed.cpu().detach().numpy() )
 
     print('saving model')
     torch.save(model.state_dict(), save_dir + "model.npy")

@@ -131,16 +131,18 @@ class GSAE(pl.LightningModule):
         kl_loss = beta * kl_loss
 
         #total_loss = recon_loss + reg_loss + kl_loss
+        total_loss = recon_loss + reg_loss
 
         #no regression
-        total_loss = recon_loss + kl_loss
+        #total_loss = recon_loss + kl_loss
 
         self.loss_list.append(total_loss.item())
 
         log_losses = {'train_loss' : total_loss.detach(), 
                     'recon_loss' : recon_loss.detach(),
-                    #'pred_loss' :reg_loss.detach(),
-                    'kl_loss': kl_loss.detach()}
+                    'pred_loss' :reg_loss.detach(),
+                    #'kl_loss': kl_loss.detach()}
+        }
         
         return total_loss, log_losses
 
@@ -150,6 +152,7 @@ class GSAE(pl.LightningModule):
     def training_step(self, batch, batch_idx):
         x, y  = batch
         x = x.float()
+        y = y.float()
         x_hat, y_hat, mu, logvar, z = self(x)
 
         loss, log_losses = self.loss_multi_GSAE(recon_x=x, x=x_hat, 
@@ -175,25 +178,28 @@ class GSAE(pl.LightningModule):
         kl_loss = self.kl_div(mu, logvar)
     
         #total_loss = recon_loss  +  reg_loss + kl_loss
-        total_loss = recon_loss + kl_loss
+        total_loss = recon_loss  +  reg_loss
+        #total_loss = recon_loss + kl_loss
 
         log_losses = {'val_loss' : total_loss.detach(), 
                     'val_recon_loss' : recon_loss.detach(),
-                    #'val_pred_loss' :reg_loss.detach(),
-                    'val_kl_loss': kl_loss.detach()}
+                    'val_pred_loss' :reg_loss.detach(),
+                    #'val_kl_loss': kl_loss.detach()}}
+        }
 
         return log_losses
 
     def validation_epoch_end(self, outputs):
         avg_loss = torch.stack([x['val_loss'] for x in outputs]).mean()
         avg_reconloss = torch.stack([x['val_recon_loss'] for x in outputs]).mean()
-        #avg_regloss = torch.stack([x['val_pred_loss'] for x in outputs]).mean()
-        avg_klloss = torch.stack([x['val_kl_loss'] for x in outputs]).mean()
+        avg_regloss = torch.stack([x['val_pred_loss'] for x in outputs]).mean()
+        #avg_klloss = torch.stack([x['val_kl_loss'] for x in outputs]).mean()
 
         tensorboard_logs = {'val_loss': avg_loss,
                             'val_avg_recon_loss': avg_reconloss,
-                            #'val_avg_pred_loss':avg_regloss,
-                            'val_avg_kl_loss':avg_klloss}
+                            'val_avg_pred_loss':avg_regloss,
+                            #'val_avg_kl_loss':avg_klloss}
+        }
 
         return {'val_loss': avg_loss, 'log': tensorboard_logs}
 

@@ -44,11 +44,17 @@ model.eval()
 
 
 scats = []
+times = []
 for i in tqdm(range(len(full_dataset))):
     scats.append(full_dataset[i][0].numpy())
+    times.append(full_dataset[i][1][0].numpy())
+
+
+
 
 
 np.save("scat_coeffs.npy", scats)
+np.save("times.npy", times)
 scats = np.array(scats)
 scats = torch.tensor(scats)
 
